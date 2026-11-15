@@ -1,0 +1,21 @@
+[Unit]
+Description=ds-harness-remote self-hosted Server (own public IP)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/dsh-remote-server
+EnvironmentFile=/opt/dsh-remote-server/.env
+ExecStart=/usr/bin/node --env-file=/opt/dsh-remote-server/.env dist/main.js
+Restart=always
+RestartSec=5
+StandardOutput=append:/opt/dsh-remote-server/data/server.log
+StandardError=append:/opt/dsh-remote-server/data/server.log
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

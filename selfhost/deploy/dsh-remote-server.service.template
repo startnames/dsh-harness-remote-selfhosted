@@ -1,0 +1,21 @@
+[Unit]
+Description=ds-harness-remote self-hosted Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+Group=__USER__
+WorkingDirectory=__DEST__
+EnvironmentFile=__DEST__/.env
+ExecStart=__NODE__ --env-file=__DEST__/.env dist/main.js
+Restart=always
+RestartSec=5
+StandardOutput=append:__DEST__/data/server.log
+StandardError=append:__DEST__/data/server.log
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

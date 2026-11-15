@@ -1,0 +1,81 @@
+{
+  "expo": {
+    "name": "DSH Remote",
+    "slug": "dsh-remote",
+    "scheme": "dshremote",
+    "version": "0.6.5",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "io.github.liguobao.dshremote",
+      "buildNumber": "72"
+    },
+    "android": {
+      "package": "io.github.liguobao.dshremote",
+      "versionCode": 72,
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": [
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#111C32",
+        "foregroundImage": "./assets/android-icon-foreground-adaptive.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "./plugins/with-remote-foreground-service",
+      "expo-file-system",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-brand.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F8F8F8"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "android": [
+              "en-US",
+              "zh-CN",
+              "ja-JP",
+              "zh-TW",
+              "es-ES",
+              "de-DE",
+              "fr-FR",
+              "ru-RU",
+              "uk-UA"
+            ]
+          }
+        }
+      ]
+    ]
+  }
+}
