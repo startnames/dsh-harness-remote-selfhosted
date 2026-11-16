@@ -6,6 +6,9 @@
 
 > 这是独立的社区项目，不是 DeepSeek 官方产品。上游许可证为 MIT，见 [LICENSE](LICENSE)。
 
+> **当前部署为多账号版本**（邀请码注册 + 管理后台 + 账号隔离），详见 [selfhost/MULTI-ACCOUNT.md](selfhost/MULTI-ACCOUNT.md)。
+> 下文「本次实际部署」中的账号体系部分以该文档为准。
+
 ## 上游基线
 
 | 项 | 值 |

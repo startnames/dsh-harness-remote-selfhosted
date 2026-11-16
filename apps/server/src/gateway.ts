@@ -417,6 +417,9 @@ export class Gateway {
           const p = frame.payload as HelloPayload
           const device = this.store.authenticate(p.accessToken).descriptor
           if (device.deviceId !== p.deviceId || device.role !== p.role) throw new ApiError('AUTH_INVALID')
+          // A disabled/deleted account must not keep an already-issued device
+          // token alive through the WebSocket control plane.
+          if (!this.store.accountExists(this.store.accountOfDevice(p.deviceId))) throw new ApiError('ACCOUNT_DISABLED')
           if (!p.protocols.includes(1)) throw new ApiError('UNSUPPORTED_VERSION')
           // Re-assert the state: if the deadline fired while credentials were
           // checked, the timeout wins and none of the side effects below run.
@@ -452,6 +455,7 @@ export class Gateway {
         if (frame.type === 'hello') throw new ApiError('INVALID_MESSAGE')
         if (!peer || this.peers.get(peer.id) !== peer) throw new ApiError('AUTH_INVALID')
         this.store.get(peer.id)
+        if (!this.store.accountExists(this.store.accountOfDevice(peer.id))) throw new ApiError('ACCOUNT_DISABLED')
         if (this.isDroppedLinkFrame(peer, frame)) {
           if (++droppedFrames > maxDroppedFrames || (droppedBytes += frameBytes) > maxDroppedBytes) {
             throw new ApiError('RATE_LIMITED')
@@ -515,6 +519,12 @@ export class Gateway {
       const host = this.peers.get(request.hostDeviceId)
       if (!host || host.role !== 'host') { this.send(peer, createControlFrame('error', { code: 'HOST_OFFLINE', message: 'Host is offline.', retryable: true })); return }
       this.store.get(host.id)
+      // Account isolation: a client may only connect to a Host owned by the
+      // same account. Without this check, any registered account could reach
+      // every Host on the Server.
+      if (this.store.accountOfDevice(peer.id) !== this.store.accountOfDevice(host.id)) {
+        this.send(peer, createControlFrame('error', { code: 'MEMBERSHIP_REQUIRED', message: 'Membership required.', retryable: false })); return
+      }
       if (!request.preferredTransports.includes('relay') || !peer.capabilities.includes('transport.relay') || !host.capabilities.includes('transport.relay')) throw new ApiError('CAPABILITY_NOT_SUPPORTED')
       // The link coordinates only transports both peers actually advertised;
       // the Host receives the same intersection so it never sees a transport

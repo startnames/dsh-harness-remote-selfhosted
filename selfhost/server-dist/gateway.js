@@ -401,6 +401,10 @@ export class Gateway {
                     const device = this.store.authenticate(p.accessToken).descriptor;
                     if (device.deviceId !== p.deviceId || device.role !== p.role)
                         throw new ApiError('AUTH_INVALID');
+                    // A disabled/deleted account must not keep an already-issued device
+                    // token alive through the WebSocket control plane.
+                    if (!this.store.accountExists(this.store.accountOfDevice(p.deviceId)))
+                        throw new ApiError('ACCOUNT_DISABLED');
                     if (!p.protocols.includes(1))
                         throw new ApiError('UNSUPPORTED_VERSION');
                     // Re-assert the state: if the deadline fired while credentials were
@@ -440,6 +444,8 @@ export class Gateway {
                 if (!peer || this.peers.get(peer.id) !== peer)
                     throw new ApiError('AUTH_INVALID');
                 this.store.get(peer.id);
+                if (!this.store.accountExists(this.store.accountOfDevice(peer.id)))
+                    throw new ApiError('ACCOUNT_DISABLED');
                 if (this.isDroppedLinkFrame(peer, frame)) {
                     if (++droppedFrames > maxDroppedFrames || (droppedBytes += frameBytes) > maxDroppedBytes) {
                         throw new ApiError('RATE_LIMITED');
@@ -524,6 +530,13 @@ export class Gateway {
                 return;
             }
             this.store.get(host.id);
+            // Account isolation: a client may only connect to a Host owned by the
+            // same account. Without this check, any registered account could reach
+            // every Host on the Server.
+            if (this.store.accountOfDevice(peer.id) !== this.store.accountOfDevice(host.id)) {
+                this.send(peer, createControlFrame('error', { code: 'MEMBERSHIP_REQUIRED', message: 'Membership required.', retryable: false }));
+                return;
+            }
             if (!request.preferredTransports.includes('relay') || !peer.capabilities.includes('transport.relay') || !host.capabilities.includes('transport.relay'))
                 throw new ApiError('CAPABILITY_NOT_SUPPORTED');
             // The link coordinates only transports both peers actually advertised;

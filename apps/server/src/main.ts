@@ -33,6 +33,10 @@ const app = createRemoteServer({
   maxFramesPerSec,
   logLevel,
   ice: parseIceConfig(process.env),
+  // Multi-account registration policy. Empty invite code disables the code
+  // requirement; set DSH_SERVER_INVITE_CODE to require one for public signup.
+  registrationEnabled: process.env.DSH_SERVER_REGISTRATION_ENABLED !== 'false',
+  inviteCode: process.env.DSH_SERVER_INVITE_CODE ?? '',
 })
 app.server.listen(port, process.env.DSH_SERVER_HOST ?? '127.0.0.1', () => console.info(`Remote Server listening on port ${port}`))
 app.server.on('error', () => { console.error('Remote Server could not listen. Check address and port.'); process.exitCode = 1; app.gateway.close() })

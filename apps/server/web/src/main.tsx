@@ -4,9 +4,11 @@ import { ConfigProvider, Layout, theme as antdTheme } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { ThemeProvider, useColorTheme } from './theme'
 import { LoginPanel } from './LoginPanel'
+import { RegisterPanel } from './RegisterPanel'
 import { DevicesPage } from './DevicesPage'
+import { AdminPage } from './AdminPage'
 import { HomePage } from './HomePage'
-import { api, RequestError, type Account } from './api'
+import { api, RequestError, type Account, type RegistrationPolicy } from './api'
 import 'antd/dist/reset.css'
 import './upstream.css'
 import './selfhost.css'
@@ -21,6 +23,7 @@ function App() {
   const dark = colorTheme === 'dark'
   const [account, setAccount] = useState<Account | null>()
   const [error, setError] = useState<string>()
+  const [registrationEnabled, setRegistrationEnabled] = useState(true)
   const [path, setPath] = useState(() => window.location.pathname)
   // Keep route state and URL in sync without dispatching popstate: dispatching synchronously makes
   // React commit the route change separately, so an auth transition can render an intermediate
@@ -42,26 +45,41 @@ function App() {
       setAccount(null)
     })
   }, [])
+  useEffect(() => {
+    api<RegistrationPolicy>('/auth/registration').then(data => setRegistrationEnabled(data.enabled))
+      .catch(() => setRegistrationEnabled(true))
+  }, [])
   // These Ant Design tokens are retained from the upstream App.tsx ConfigProvider.
   useEffect(() => {
     if (justLoggedIn.current) { justLoggedIn.current = false; return }
-    if (account === null && path === '/app/remote') go('/app/login')
+    if (account === null && (path === '/app/remote' || path === '/app/admin')) { go('/app/login'); return }
+    if (path === '/app/admin' && account && !account.isAdmin) { go('/app/remote'); return }
   }, [account, path, go])
   const login = useCallback((next: Account) => { justLoggedIn.current = true; setAccount(next); go('/app/remote') }, [go])
+  const goAdmin = useCallback(() => go('/app/admin'), [go])
+  const goBack = useCallback(() => go('/app/remote'), [go])
+  const goLogin = useCallback(() => go('/app/login'), [go])
+  const goRegister = useCallback(() => go('/app/register'), [go])
   const content = account === undefined
     ? <div className="route-loading auth-route-loading" role="status">正在检查登录状态…</div>
     : path === '/app/remote' && account
-      ? <DevicesPage account={account.account} onSignedOut={signedOut} />
-      : path === '/app/login'
-        ? <LoginPanel onAuthSuccess={login} initialError={error} />
-        : <HomePage />
+      ? <DevicesPage account={account.account} onSignedOut={signedOut} isAdmin={account.isAdmin} onGoAdmin={goAdmin} />
+      : path === '/app/admin'
+        ? account && account.isAdmin
+          ? <AdminPage account={account} onSignedOut={signedOut} onBack={goBack} />
+          : <div className="route-loading auth-route-loading" role="status">正在跳转…</div>
+        : path === '/app/login'
+          ? <LoginPanel onAuthSuccess={login} initialError={error} registrationEnabled={registrationEnabled} onGoRegister={goRegister} />
+          : path === '/app/register'
+            ? <RegisterPanel onAuthSuccess={login} onGoLogin={goLogin} />
+            : <HomePage />
   return <ConfigProvider locale={zhCN} theme={{
     algorithm: dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
       colorPrimary: '#1677ff', colorInfo: '#1677ff', colorSuccess: dark ? '#49aa68' : '#16a34a', colorWarning: dark ? '#d89614' : '#d97706', colorError: dark ? '#ff7875' : '#cf222e',
       colorBgLayout: dark ? '#111318' : '#f5f5f7', colorBgContainer: dark ? '#181b22' : '#ffffff', colorBgElevated: dark ? '#20242c' : '#ffffff', colorText: dark ? '#f2f3f5' : '#1d1d1f', colorTextSecondary: dark ? '#b7bcc7' : '#6e6e73', colorTextPlaceholder: dark ? '#8d94a3' : '#6e6e73', colorBorder: dark ? '#3a404c' : '#d9e2ec', colorBorderSecondary: dark ? '#2d323c' : '#e8e8ed', borderRadius: 6, borderRadiusLG: 8, controlHeight: 40, fontSize: 15, wireframe: false,
     }, components: { Button: { primaryShadow: 'none' }, Table: { headerBg: dark ? '#20242c' : '#f7f7f8', headerColor: dark ? '#c8cdd6' : '#4b5563' } },
-  }}><Layout className={account && path === '/app/remote' ? 'app-shell product-shell' : 'app-shell auth-shell'}>
+  }}><Layout className={account && (path === '/app/remote' || path === '/app/admin') ? 'app-shell product-shell' : 'app-shell auth-shell'}>
     {content}
   </Layout></ConfigProvider>
 }

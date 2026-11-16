@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { api, type Account } from './api'
 import { ThemeToggle } from './ThemeToggle'
 import { SiteFooter } from './SiteFooter'
-export function LoginPanel({ onAuthSuccess, initialError }: { onAuthSuccess: (account: Account) => void; initialError?: string }) {
+export function LoginPanel({ onAuthSuccess, initialError, registrationEnabled = true, onGoRegister }: { onAuthSuccess: (account: Account) => void; initialError?: string; registrationEnabled?: boolean; onGoRegister?: () => void }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError ?? '')
   const [form] = Form.useForm<{ email: string; password: string }>()
@@ -29,6 +29,7 @@ export function LoginPanel({ onAuthSuccess, initialError }: { onAuthSuccess: (ac
           <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }, { max: 1024, message: '密码不能超过 1024 个字符' }]}><Input.Password size="large" placeholder="请输入密码" autoComplete="current-password" /></Form.Item>
           <Form.Item className="auth-submit-item"><Button loading={loading} block type="primary" size="large" htmlType="submit">登录</Button></Form.Item>
         </Form>
+        {registrationEnabled && onGoRegister && <div style={{ textAlign: 'center' }}><span>没有账号？</span><Button type="link" size="small" onClick={onGoRegister} style={{ padding: 0 }}>注册</Button></div>}
       </Card>
     </section>
   </main><SiteFooter /></>

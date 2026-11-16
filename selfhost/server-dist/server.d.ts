@@ -17,6 +17,8 @@ export interface Config {
     maxFramesPerSec?: number;
     logLevel?: LogLevel;
     ice?: IceConfig;
+    registrationEnabled?: boolean;
+    inviteCode?: string;
 }
 /**
  * Timing configuration is normalized in one place (`config.ts`) so the CLI and
